@@ -15,7 +15,7 @@ private:
 };
 
 typedef vec<2, float> Vec2f;
-typedef vec<3, float> Vec3f;
+typedef vec<3, float> vec3;
 typedef vec<3, int  > Vec3i;
 typedef vec<4, float> Vec4f;
 

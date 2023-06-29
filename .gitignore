@@ -10,6 +10,7 @@ main
 *.exe
 *.dSYM
 *.stackdump
+*.ppm
 
 # Visual debugger configurations
 .vscode/
