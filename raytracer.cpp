@@ -90,6 +90,22 @@ vec3 cast_ray(const vec3 &orig, const vec3 &dir, int j, int i, std::vector<std::
     float diffuse_light_intensity = 0, specular_light_intensity = 0;
     for (size_t i = 0; i < lights.size(); i++) {
         vec3 light_dir = (lights[i].position - point).normalize();
+        // shadows 
+        double light_distance = (lights[i].position - point).norm();
+        vec3 shadow_origin;
+        // perturbing point in direction of normal to combat self shadowing
+        // https://web.cse.ohio-state.edu/~shen.94/681/Site/Slides_files/shadow.pdf
+        // slides 14-17
+        if (light_dir * N < 0) {
+            shadow_origin = point - N*1e-3;
+        } else {
+            shadow_origin = point + N*1e-3;
+        }
+        vec3 shadow_point, shadow_normal;
+        Material temp_material;
+        if (scene_intersect(shadow_origin, light_dir, spheres, shadow_point, shadow_normal, temp_material) and (shadow_point - shadow_origin).norm() < light_distance) {
+            continue;
+        }
         diffuse_light_intensity += lights[i].intensity * std::max(0.f, light_dir*N);
         specular_light_intensity += pow(std::max(0.f ,reflect(light_dir, N) * dir), material.shiny_constant) * lights[i].intensity;
     }
