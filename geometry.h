@@ -14,7 +14,7 @@ private:
     T data_[DIM];
 };
 
-typedef vec<2, float> Vec2f;
+typedef vec<2, float> vec2;
 typedef vec<3, float> vec3;
 typedef vec<3, int  > Vec3i;
 typedef vec<4, float> Vec4f;
