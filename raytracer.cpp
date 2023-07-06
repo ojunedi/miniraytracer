@@ -194,17 +194,17 @@ int main() {
 
 
     std::vector<Sphere> spheres;
-    // spheres.push_back(Sphere(vec3(-3, 10, -16), 2, ivory));
-    // spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2, turquiose));
-    // spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, mirror));
-    // spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,      ivory));
-    // spheres.push_back(Sphere(vec3(-5, 1, -10), 2, red_rubber));
-    // spheres.push_back(Sphere(vec3(-7, -5, -10), 1, mirror));
-    // spheres.push_back(Sphere(vec3(-15,    -10,   -16), 2,      red_rubber));
-    spheres.push_back(Sphere(vec3(-3,    0,   -16), 2,      ivory));
-    spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2,      mirror));
-    spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, red_rubber));
-    spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,     mirror));
+    spheres.push_back(Sphere(vec3(-3, 10, -16), 2, ivory));
+    spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2, turquiose));
+    spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, mirror));
+    spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,      ivory));
+    spheres.push_back(Sphere(vec3(-5, 1, -10), 2, red_rubber));
+    spheres.push_back(Sphere(vec3(-7, -5, -10), 1, mirror));
+    spheres.push_back(Sphere(vec3(-15,    -10,   -16), 2,      red_rubber));
+    // spheres.push_back(Sphere(vec3(-3,    0,   -16), 2,      ivory));
+    // spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2,      mirror));
+    // spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, red_rubber));
+    // spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,     mirror));
     
     std::vector<Light> lights;
     // lights.push_back(Light(vec3(-20,20,20),1.5));
