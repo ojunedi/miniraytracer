@@ -8,10 +8,10 @@
 
 
 struct Material {
-    Material(const vec3 &color, const vec2 &a, const float &sc) : diffuse_color(color), albedo(a), shiny_constant(sc) {}
-    Material() :  diffuse_color(), albedo(1,0), shiny_constant() {}
+    Material(const vec3 &color, const vec3 &a, const float &sc) : diffuse_color(color), albedo(a), shiny_constant(sc) {}
+    Material() :  diffuse_color(), albedo(1,0,0), shiny_constant() {}
     vec3 diffuse_color;
-    vec2 albedo;
+    vec3 albedo;
     float shiny_constant;
 };
 
@@ -76,16 +76,29 @@ bool scene_intersect(const vec3 &orig, const vec3 &dir, const std::vector<Sphere
 }
 
 vec3 cast_ray(const vec3 &orig, const vec3 &dir, int j, int i, std::vector<std::pair<int,int>> &intersections, 
-                const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
+                const std::vector<Sphere> &spheres, const std::vector<Light> &lights, size_t depth=0) {
 
     vec3 point, N;
     Material material;
+    float epsilon = 1e-3;
 
-    if (!scene_intersect(orig, dir, spheres, point, N, material)) {
-        // return vec3(0.2, 0.7, 0.8); // blueish color
-        return vec3(0.5,0.5,0.5); // grey
+
+    if (depth > 4 || !scene_intersect(orig, dir, spheres, point, N, material)) {
+        return vec3(0.2, 0.7, 0.8); // blueish color
+        // return vec3(0.5,0.5,0.5); // grey
+        // return vec3(0.1,0.1,0.1);
     }
     intersections.push_back({j, i});
+
+    vec3 reflect_dir = reflect(dir, N).normalize();
+    vec3 reflect_origin;
+    if (reflect_dir * N < 0) {
+        reflect_origin = point - N*epsilon;
+    } else {
+        reflect_origin = point + N*epsilon;
+    }
+    std::vector<std::pair<int,int>> dummy = {{1,1}};
+    vec3 reflect_color = cast_ray(reflect_origin, reflect_dir, 0, 0, dummy, spheres, lights, depth + 1);
 
     float diffuse_light_intensity = 0, specular_light_intensity = 0;
     for (size_t i = 0; i < lights.size(); i++) {
@@ -96,10 +109,11 @@ vec3 cast_ray(const vec3 &orig, const vec3 &dir, int j, int i, std::vector<std::
         // perturbing point in direction of normal to combat self shadowing
         // https://web.cse.ohio-state.edu/~shen.94/681/Site/Slides_files/shadow.pdf
         // slides 14-17
+        // in my case without pertubation, the shadows were speckled all over the spheres
         if (light_dir * N < 0) {
-            shadow_origin = point - N*1e-3;
+            shadow_origin = point - N*epsilon;
         } else {
-            shadow_origin = point + N*1e-3;
+            shadow_origin = point + N*epsilon;
         }
         vec3 shadow_point, shadow_normal;
         Material temp_material;
@@ -109,8 +123,8 @@ vec3 cast_ray(const vec3 &orig, const vec3 &dir, int j, int i, std::vector<std::
         diffuse_light_intensity += lights[i].intensity * std::max(0.f, light_dir*N);
         specular_light_intensity += pow(std::max(0.f ,reflect(light_dir, N) * dir), material.shiny_constant) * lights[i].intensity;
     }
-    return (material.diffuse_color * diffuse_light_intensity * material.albedo[0]) 
-            + (vec3(1.0, 1.0, 1.0) * specular_light_intensity * material.albedo[1]);
+    return ((material.diffuse_color * diffuse_light_intensity * material.albedo[0]) 
+            + (vec3(1.0, 1.0, 1.0) * specular_light_intensity * material.albedo[1]) + (reflect_color*material.albedo[2]));
 
 }   
 
@@ -119,15 +133,15 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
 
     const int width = 1024;
     const int height = 768;
-    const double fov = atan(1)*(4/double(2)); // pi/2
+    const int fov = M_PI / 2.; // pi/2
 
     // contains data representing all the pixels in a frame
     std::vector<vec3> framebuffer(width * height);
-    for (size_t j = 0; j < height; j++) {
-        for (size_t i = 0; i < width; i++) {
-            framebuffer[i+j*width] = vec3(j/double(height),i/double(width), 0);
-        }        
-    }
+    // for (size_t j = 0; j < height; j++) {
+    //     for (size_t i = 0; i < width; i++) {
+    //         framebuffer[i+j*width] = vec3(j/double(height),i/double(width), 0);
+    //     }        
+    // }
 
     std::vector<std::pair<int, int>> intersections;
 
@@ -143,42 +157,65 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     }
 
     // debugging purposes
-    for (int x = 0; x < 10; ++x) {
+    for (int x = 0; x < std::min(10, (int)intersections.size()); ++x) {
         std::cout << intersections[x].first << " " << intersections[x].second << std::endl;
     }
 
     std::ofstream fout; // save the framebuffer to file
     fout.open("./out.ppm");
     fout << "P6\n" << width << " " << height << "\n255\n";
-    for (size_t i = 0; i < height*width; ++i) {
-        for (size_t j = 0; j<3; j++) {
-            fout << (char)(int)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+    // for (size_t i = 0; i < height*width; ++i) {
+    //     for (size_t j = 0; j<3; j++) {
+    //         fout << (char)(int)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
+    //     }
+    // }
+
+    for (size_t i = 0; i < height * width; ++i) {
+        vec3 &c = framebuffer[i];
+        double max = std::max(c[0], std::max(c[1], c[2]));
+        if (max > 1) {
+            c = c * (1./max);
+        }
+        for (size_t j = 0; j < 3; j++) {
+            fout << (char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
     }
+
     fout.close();
 
 }
 
 int main() {
 
-    Material ivory( vec3(0.4, 0.4, 0.3), vec2(0.6, 0.3),50.);
-    Material red_rubber(vec3(0.3, 0.1, 0.1), vec2(0.9, 0.1), 10.);
-    Material turquiose(vec3(0, 1, 1), vec2(0.3, 0.5), 25.);
+    Material      ivory(vec3(0.4, 0.4, 0.3), vec3(0.6, 0.3, 0.1), 50.);
+    Material red_rubber(vec3(0.3, 0.1, 0.1), vec3(0.9, 0.1, 0.0), 10.);
+    Material  turquiose(vec3(0.0, 1.0, 1.0), vec3(0.3, 0.5, 0.2), 25.);
+    Material     mirror(vec3(0.0, 10.0, 0.8),vec3(1.0, 1.0, 1.0), 1425.);
+    Material       fifi(vec3(0.8, 0.8, 0.488), vec3(0.8,0.1,0.1), 10.);
+
+
 
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(vec3(-3,    10,   -16), 2,      ivory));
-    spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2, turquiose));
+    // spheres.push_back(Sphere(vec3(-3, 10, -16), 2, ivory));
+    // spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2, turquiose));
+    // spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, mirror));
+    // spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,      ivory));
+    // spheres.push_back(Sphere(vec3(-5, 1, -10), 2, red_rubber));
+    // spheres.push_back(Sphere(vec3(-7, -5, -10), 1, mirror));
+    // spheres.push_back(Sphere(vec3(-15,    -10,   -16), 2,      red_rubber));
+    spheres.push_back(Sphere(vec3(-3,    0,   -16), 2,      ivory));
+    spheres.push_back(Sphere(vec3(-1.0, -1.5, -12), 2,      mirror));
     spheres.push_back(Sphere(vec3( 1.5, -0.5, -18), 3, red_rubber));
-    spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,      ivory));
-    spheres.push_back(Sphere(vec3(-5, 1, -10), 2, turquiose));
-    spheres.push_back(Sphere(vec3(-7, -5, -10), 1, red_rubber));
-    spheres.push_back(Sphere(vec3(-15,    -10,   -16), 2,      ivory));
+    spheres.push_back(Sphere(vec3( 7,    5,   -18), 4,     mirror));
     
     std::vector<Light> lights;
-    lights.push_back(Light(vec3(-20,20,20),1.5));
+    // lights.push_back(Light(vec3(-20,20,20),1.5));
+    // lights.push_back(Light(vec3( 30, 50, -25), 1.8));
+    // lights.push_back(Light(vec3( 30, 20,  30), 1.7));
+    // lights.push_back(Light(vec3(20,20,20), 0.75v);
+    lights.push_back(Light(vec3(-20, 20,  20), 1.5));
     lights.push_back(Light(vec3( 30, 50, -25), 1.8));
     lights.push_back(Light(vec3( 30, 20,  30), 1.7));
-    lights.push_back(Light(vec3(20,20,20), 0.75));
     render(spheres, lights);
 
     return 0;
