@@ -4,15 +4,15 @@
 CXX ?= g++
 
 # Compiler flags
-CXXFLAGS ?= --std=c++11 -Wall -Werror -pedantic -g -Wno-sign-compare -Wno-comment
+CXXFLAGS ?= --std=c++11 -Wall -Werror -pedantic -pg -Wno-sign-compare -Wno-comment
 
 # sanitizer 
-CXXFLAGS = --std=c++11 -Wall -Werror -pedantic -g -fsanitize=address -fsanitize=undefined
+CXXFLAGS = --std=c++11 -Wall -Werror -pedantic -pg -fsanitize=address -fsanitize=undefined
 
 main.exe: main.cpp
 	$(CXX) $(CXXFLAGS) main.cpp -o $@
 
-ray.exe: raytracer.cpp
+ray: raytracer.cpp
 	$(CXX) $(CXXFLAGS) raytracer.cpp -o $@
 
 

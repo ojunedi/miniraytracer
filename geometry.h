@@ -1,4 +1,3 @@
-// https://github.com/ssloy/tinyraytracer/blob/bd36c9857305b3cbd06f5b768bb48a92df9ae68b/geometry.h
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 #include <cmath>
@@ -18,7 +17,7 @@ typedef vec<2, float> vec2;
 typedef vec<3, float> Vec3f;
 typedef vec<3, float> vec3;
 typedef vec<3, int  > Vec3i;
-typedef vec<4, float> Vec4f;
+typedef vec<4, float> vec4;
 
 template <typename T> struct vec<2,T> {
     vec() : x(T()), y(T()) {}
